@@ -1,10 +1,11 @@
 plugins {
     kotlin("multiplatform") version "1.3.72"
     id("com.android.library") version "3.6.0"
+    id("maven-publish")
 }
 
-group = "org.example"
-version = "1.0-SNAPSHOT"
+group = "io.paloski.logging"
+version = "1.0"
 
 repositories {
     mavenCentral()
@@ -33,7 +34,9 @@ kotlin {
             }
         }
     }
-    android()
+    android {
+        publishLibraryVariants("release", "debug")
+    }
 
     sourceSets {
         val commonMain by getting {
@@ -84,6 +87,19 @@ kotlin {
             }
         }
 
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            name = "GithubPackages"
+            url = uri("https://maven.pkg.github.com/APaloski/Kotlin-Logging")
+            credentials {
+                username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
+                password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
+            }
+        }
     }
 }
 
