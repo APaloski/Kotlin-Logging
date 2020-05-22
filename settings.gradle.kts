@@ -15,5 +15,5 @@ pluginManagement {
     }
 }
 
-rootProject.name = "SimpleKotlinLogging"
+rootProject.name = "logging"
 

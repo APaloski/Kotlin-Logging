@@ -4,8 +4,8 @@ plugins {
     id("maven-publish")
 }
 
-group = "io.paloski.logging"
-version = "1.0"
+group = "io.paloski"
+version = "1.0.4"
 
 repositories {
     mavenCentral()
@@ -18,7 +18,8 @@ kotlin {
     *  To find out how to configure the targets, please follow the link:
     *  https://kotlinlang.org/docs/reference/building-mpp-with-gradle.html#setting-up-targets */
 
-    jvm()
+    jvm {
+    }
     js {
         browser {
             testTask {
