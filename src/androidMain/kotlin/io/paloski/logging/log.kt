@@ -8,13 +8,13 @@ import java.util.*
 actual fun makeNativeTree() : Tree = AndroidLogTree
 
 object AndroidLogTree : Tree {
-    override fun log(tag: String, level: LogLevel, messageProducer: () -> String) {
+    override fun log(tag: String, level: LogLevel, exception : Throwable?, messageProducer: () -> String) {
         when(level) {
-            LogLevel.INFO ->  Log.i(tag, messageProducer())
-            LogLevel.DEBUG -> Log.d(tag, messageProducer())
-            LogLevel.WARN -> Log.w(tag, messageProducer())
-            LogLevel.ERROR -> Log.e(tag, messageProducer())
-            LogLevel.FATAL -> Log.wtf(tag, messageProducer())
+            LogLevel.INFO ->  Log.i(tag, messageProducer(), exception)
+            LogLevel.DEBUG -> Log.d(tag, messageProducer(), exception)
+            LogLevel.WARN -> Log.w(tag, messageProducer(), exception)
+            LogLevel.ERROR -> Log.e(tag, messageProducer(), exception)
+            LogLevel.FATAL -> Log.wtf(tag, messageProducer(), exception)
         }
 
     }

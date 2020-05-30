@@ -14,31 +14,31 @@ enum class LogLevel {
         "[$name]"
 }
 
-inline fun <reified T : Any?> T.log(level : LogLevel, message : String) = log(level) { message }
-inline fun <reified T : Any?> T.log(level : LogLevel, noinline messageProducer : () -> String) = Forest.log(T::class.simpleName.orEmpty(), level, messageProducer)
+inline fun <reified T : Any?> T.log(level : LogLevel, message : String, exception : Throwable? = null) = log(level, exception) { message }
+inline fun <reified T : Any?> T.log(level : LogLevel, exception : Throwable? = null, noinline messageProducer : () -> String) = Forest.log(T::class.simpleName.orEmpty(), level, exception, messageProducer)
 
-inline fun <reified T : Any?> T.infoLog(message: String) = log(LogLevel.INFO, message)
-inline fun <reified T : Any?> T.debugLog(message: String) = log(LogLevel.DEBUG, message)
-inline fun <reified T : Any?> T.warningLog(message: String) = log(LogLevel.WARN, message)
-inline fun <reified T : Any?> T.errorLog(message: String) = log(LogLevel.ERROR, message)
-inline fun <reified T : Any?> T.fatalLog(message: String) = log(LogLevel.FATAL, message)
+inline fun <reified T : Any?> T.infoLog(message: String, exception : Throwable? = null) = log(LogLevel.INFO, message, exception)
+inline fun <reified T : Any?> T.debugLog(message: String, exception : Throwable? = null) = log(LogLevel.DEBUG, message, exception)
+inline fun <reified T : Any?> T.warningLog(message: String, exception : Throwable? = null) = log(LogLevel.WARN, message, exception)
+inline fun <reified T : Any?> T.errorLog(message: String, exception : Throwable? = null) = log(LogLevel.ERROR, message, exception)
+inline fun <reified T : Any?> T.fatalLog(message: String, exception : Throwable? = null) = log(LogLevel.FATAL, message, exception)
 
-inline fun <reified T : Any?> T.infoLog(noinline messageProducer : () -> String) = log(LogLevel.INFO, messageProducer)
-inline fun <reified T : Any?> T.debugLog(noinline messageProducer : () -> String) = log(LogLevel.DEBUG, messageProducer)
-inline fun <reified T : Any?> T.warningLog(noinline messageProducer : () -> String) = log(LogLevel.WARN, messageProducer)
-inline fun <reified T : Any?> T.errorLog(noinline messageProducer : () -> String) = log(LogLevel.ERROR, messageProducer)
-inline fun <reified T : Any?> T.fatalLog(noinline messageProducer : () -> String) = log(LogLevel.FATAL, messageProducer)
+inline fun <reified T : Any?> T.infoLog(exception : Throwable? = null, noinline messageProducer : () -> String) = log(LogLevel.INFO, exception, messageProducer)
+inline fun <reified T : Any?> T.debugLog(exception : Throwable? = null,noinline messageProducer : () -> String) = log(LogLevel.DEBUG, exception, messageProducer)
+inline fun <reified T : Any?> T.warningLog(exception : Throwable? = null,noinline messageProducer : () -> String) = log(LogLevel.WARN, exception, messageProducer)
+inline fun <reified T : Any?> T.errorLog(exception : Throwable? = null,noinline messageProducer : () -> String) = log(LogLevel.ERROR, exception, messageProducer)
+inline fun <reified T : Any?> T.fatalLog(exception : Throwable? = null,noinline messageProducer : () -> String) = log(LogLevel.FATAL, exception, messageProducer)
 
 
 interface Tree {
 
-    fun info(tag: String, messageProducer: () -> String) = log(tag, LogLevel.INFO, messageProducer)
-    fun debug(tag: String, messageProducer: () -> String) = log(tag, LogLevel.DEBUG, messageProducer)
-    fun warning(tag: String, messageProducer: () -> String) = log(tag, LogLevel.WARN, messageProducer)
-    fun error(tag: String, messageProducer: () -> String) = log(tag, LogLevel.ERROR, messageProducer)
-    fun fatal(tag: String, messageProducer: () -> String) = log(tag, LogLevel.FATAL, messageProducer)
+    fun info(tag: String, exception : Throwable? = null, messageProducer: () -> String) = log(tag, LogLevel.INFO, exception, messageProducer)
+    fun debug(tag: String, exception : Throwable? = null, messageProducer: () -> String) = log(tag, LogLevel.DEBUG, exception, messageProducer)
+    fun warning(tag: String, exception : Throwable? = null, messageProducer: () -> String) = log(tag, LogLevel.WARN, exception, messageProducer)
+    fun error(tag: String, exception : Throwable? = null, messageProducer: () -> String) = log(tag, LogLevel.ERROR, exception, messageProducer)
+    fun fatal(tag: String, exception : Throwable? = null, messageProducer: () -> String) = log(tag, LogLevel.FATAL, exception, messageProducer)
 
-    fun log(tag : String, level: LogLevel, messageProducer: () -> String)
+    fun log(tag : String, level: LogLevel, exception : Throwable? = null, messageProducer: () -> String)
 
     fun isLoggable(tag : String, level: LogLevel) = true
 }
@@ -65,19 +65,19 @@ expect object Forest {
 
 }
 
-fun Forest.info(tag: String, messageProducer: () -> String) = log(tag, LogLevel.INFO, messageProducer)
-fun Forest.debug(tag: String, messageProducer: () -> String) = log(tag, LogLevel.DEBUG, messageProducer)
-fun Forest.warning(tag: String, messageProducer: () -> String) = log(tag, LogLevel.WARN, messageProducer)
-fun Forest.error(tag: String, messageProducer: () -> String) = log(tag, LogLevel.ERROR, messageProducer)
-fun Forest.fatal(tag: String, messageProducer: () -> String) = log(tag, LogLevel.FATAL, messageProducer)
+fun Forest.info(tag: String, exception : Throwable? = null, messageProducer: () -> String) = log(tag, LogLevel.INFO, exception, messageProducer)
+fun Forest.debug(tag: String, exception : Throwable? = null, messageProducer: () -> String) = log(tag, LogLevel.DEBUG, exception, messageProducer)
+fun Forest.warning(tag: String, exception : Throwable? = null, messageProducer: () -> String) = log(tag, LogLevel.WARN, exception, messageProducer)
+fun Forest.error(tag: String, exception : Throwable? = null, messageProducer: () -> String) = log(tag, LogLevel.ERROR, exception, messageProducer)
+fun Forest.fatal(tag: String, exception : Throwable? = null, messageProducer: () -> String) = log(tag, LogLevel.FATAL, exception, messageProducer)
 
-fun Forest.log(tag : String, level: LogLevel, messageProducer: () -> String) = Forest.asTree().log(tag, level, messageProducer)
+fun Forest.log(tag : String, level: LogLevel, exception : Throwable? = null, messageProducer: () -> String) = Forest.asTree().log(tag, level, exception, messageProducer)
 
 fun Forest.asTree() : Tree = ForestTree
 
 internal object ForestTree : Tree {
-    override fun log(tag: String, level: LogLevel, messageProducer: () -> String) {
-        Forest.trees.onEach { tree -> tree.log(tag, level, messageProducer) }
+    override fun log(tag: String, level: LogLevel, exception : Throwable?, messageProducer: () -> String) {
+        Forest.trees.onEach { tree -> tree.log(tag, level, exception, messageProducer) }
     }
 
     override fun isLoggable(tag: String, level: LogLevel): Boolean {

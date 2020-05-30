@@ -15,8 +15,8 @@ fun Forest.plantAllServiceTrees() {
 actual fun makeNativeTree() : Tree = JavaUtilLoggingTree
 
 object JavaUtilLoggingTree : Tree {
-    override fun log(tag: String, level: LogLevel, messageProducer: () -> String) {
-        Logger.getLogger(tag).log(level.toJULLevel(), messageProducer())
+    override fun log(tag: String, level: LogLevel, exception : Throwable?, messageProducer: () -> String) {
+        Logger.getLogger(tag).log(level.toJULLevel(), messageProducer(), exception)
     }
 
     override fun isLoggable(tag : String, level: LogLevel) =
