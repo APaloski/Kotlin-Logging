@@ -1,6 +1,6 @@
 plugins {
-    kotlin("multiplatform") version "1.3.72"
     id("com.android.library") version "3.6.0"
+    kotlin("multiplatform") version "1.4.21"
     id("maven-publish")
 }
 
@@ -18,9 +18,10 @@ kotlin {
     *  To find out how to configure the targets, please follow the link:
     *  https://kotlinlang.org/docs/reference/building-mpp-with-gradle.html#setting-up-targets */
 
-    jvm {
-    }
-    js {
+    jvm("jvmCommon")
+    jvm("jvmJdkLogging")
+    jvm("jvmSlf4j")
+    js(BOTH) {
         browser {
             testTask {
                 useKarma {
@@ -39,12 +40,11 @@ kotlin {
         publishLibraryVariants("release", "debug")
     }
 
+    val autoServiceVersion = "1.0-rc7"
+
     sourceSets {
-        val commonMain by getting {
-            dependencies {
-                implementation(kotlin("stdlib-common"))
-            }
-        }
+        val commonMain by getting
+
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test-common"))
@@ -52,11 +52,7 @@ kotlin {
             }
         }
 
-        val androidMain by getting {
-            dependencies {
-                implementation(kotlin("stdlib"))
-            }
-        }
+        val androidMain by getting
 
         val androidTest by getting {
             dependencies {
@@ -64,23 +60,39 @@ kotlin {
             }
         }
 
-        val jvmMain by getting {
+        val jvmCommonMain by getting {
+            dependsOn(commonMain)
             dependencies {
                 implementation(kotlin("stdlib-jdk8"))
             }
         }
 
-        val jvmTest by getting {
+        val jvmCommonTest by getting {
             dependencies {
                 implementation(kotlin("test-junit"))
             }
         }
 
-        val jsMain by getting {
+        val jvmJdkLoggingMain by getting {
+            dependsOn(jvmCommonMain)
+        }
+
+        val jvmJdkLoggingTest by getting {
+            dependsOn(jvmCommonTest)
+        }
+
+        val jvmSlf4jMain by getting {
+            dependsOn(jvmCommonMain)
             dependencies {
-                implementation(kotlin("stdlib-js"))
+                implementation("org.slf4j:slf4j-api:1.7.30")
             }
         }
+
+        val jvmSlf4jTest by getting {
+            dependsOn(jvmCommonTest)
+        }
+
+        val jsMain by getting
 
         val jsTest by getting {
             dependencies {

@@ -1,10 +1,5 @@
 package io.paloski.logging
 
-/**
- * Obtains the default tree for this platform, the "native fauna" if you will
- */
-actual fun makeNativeTree(): Tree = ConsoleTree
-
 object ConsoleTree : Tree {
     override fun log(tag: String, level: LogLevel, exception : Throwable?, messageProducer: () -> String) {
         when(level) {
@@ -50,3 +45,6 @@ actual object Forest {
     }
 
 }
+
+actual fun Forest.plantDefaultTree() =
+    ConsoleTree.plant()

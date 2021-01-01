@@ -1,26 +1,31 @@
 package io.paloski.logging
 
-import java.util.*
-import java.util.concurrent.ConcurrentSkipListSet
 import java.util.logging.Level
 import java.util.logging.Logger
 
-//Why use java.util.logging? To keep this light
 
-fun Forest.plantAllServiceTrees() {
-    val loader = ServiceLoader.load(Tree::class.java)
-    loader.forEach { it.plant() }
-}
-
-actual fun makeNativeTree() : Tree = JavaUtilLoggingTree
-
-object JavaUtilLoggingTree : Tree {
+//Must be a class for service loading purposes - make sure we have equals/hashcode for unique purposes
+class JavaUtilLoggingTree : Tree {
     override fun log(tag: String, level: LogLevel, exception : Throwable?, messageProducer: () -> String) {
-        Logger.getLogger(tag).log(level.toJULLevel(), messageProducer(), exception)
+        if(isLoggable(tag, level)) {
+            Logger.getLogger(tag).log(level.toJULLevel(), messageProducer(), exception)
+        }
     }
 
     override fun isLoggable(tag : String, level: LogLevel) =
         Logger.getLogger(tag).isLoggable(level.toJULLevel())
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return javaClass.hashCode()
+    }
+
+
 }
 
 private sealed class InternalLevels(level : LogLevel) : Level(level.name, level.ordinal) {
@@ -40,20 +45,3 @@ private fun LogLevel.toJULLevel() : Level =
         LogLevel.ERROR -> InternalLevels.ERROR
         LogLevel.FATAL -> InternalLevels.FATAL
     }
-
-actual object Forest {
-    actual val trees: Set<Tree>
-        get() = sneakyTrees
-
-    private val sneakyTrees = Collections.synchronizedSet<Tree>(mutableSetOf())
-
-    actual fun plant(tree: Tree) {
-        require(tree != ForestTree)
-        sneakyTrees += tree
-    }
-
-    actual fun uproot(tree: Tree) {
-        require(tree != ForestTree)
-        sneakyTrees -= tree
-    }
-}

@@ -3,10 +3,6 @@ package io.paloski.logging
 import android.util.Log
 import java.util.*
 
-//Why use java.util.logging? To keep this light
-
-actual fun makeNativeTree() : Tree = AndroidLogTree
-
 object AndroidLogTree : Tree {
     override fun log(tag: String, level: LogLevel, exception : Throwable?, messageProducer: () -> String) {
         when(level) {
@@ -47,3 +43,5 @@ actual object Forest {
         sneakyTrees -= tree
     }
 }
+
+actual fun Forest.plantDefaultTree() = AndroidLogTree.plant()

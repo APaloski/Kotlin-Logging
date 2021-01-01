@@ -1,6 +1,7 @@
 package io.paloski.logging
 
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
@@ -77,22 +78,13 @@ class KLogTest {
     }
 
     @Test
-    fun defaultTreeCanBePlanted() {
-        makeNativeTree().plant()
-    }
-
-    @Test
-    fun defaultTreeAppearsInListAfterPlanting() {
-        val tree = makeNativeTree()
-        tree.plant()
-
-        assertTrue("Forest must contain the default native tree") { Forest.trees.contains(tree) }
-    }
-
-    @Test
     fun plantedTreeCanBeUprooted() {
-        val tree = makeNativeTree()
+        val tree = DummyTree
         tree.plant()
         tree.uproot()
+    }
+
+    private object DummyTree : Tree {
+        override fun log(tag: String, level: LogLevel, exception: Throwable?, messageProducer: () -> String) = Unit
     }
 }

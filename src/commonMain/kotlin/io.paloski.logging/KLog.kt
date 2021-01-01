@@ -1,7 +1,5 @@
 package io.paloski.logging
 
-import kotlin.reflect.KClass
-
 enum class LogLevel {
     INFO,
     DEBUG,
@@ -29,7 +27,10 @@ inline fun <reified T : Any?> T.warningLog(exception : Throwable? = null,noinlin
 inline fun <reified T : Any?> T.errorLog(exception : Throwable? = null,noinline messageProducer : () -> String) = log(LogLevel.ERROR, exception, messageProducer)
 inline fun <reified T : Any?> T.fatalLog(exception : Throwable? = null,noinline messageProducer : () -> String) = log(LogLevel.FATAL, exception, messageProducer)
 
-
+/**
+ * Represents a single type of logger, usually delegating to an underlying framework for the platform. Multiple of these
+ * can be installed in the [Forest] by using the [plant] method.
+ */
 interface Tree {
 
     fun info(tag: String, exception : Throwable? = null, messageProducer: () -> String) = log(tag, LogLevel.INFO, exception, messageProducer)
@@ -44,17 +45,22 @@ interface Tree {
 }
 
 /**
- * Obtains the default tree for this platform, the "native fauna" if you will
- */
-expect fun makeNativeTree() : Tree
-
-/**
- * Plants this tree,
+ * Plants this tree, adding it to the forest to receive all logging calls
  */
 fun Tree.plant() = Forest.plant(this)
 
+/**
+ * Uproots this tree, removing it from the forest and stopping log entries
+ */
 fun Tree.uproot() = Forest.uproot(this)
 
+/**
+ * Defines the "Forest" of trees, that is all of the places we are going to be writing out log entires to when one of the
+ * global log methods like [debugLog] is called.
+ *
+ * To use the basic tree for the dependency with this forest call [plantDefaultTree], some platforms may support loading
+ * all types of trees with similar methods.
+ */
 expect object Forest {
 
     val trees : Set<Tree>
@@ -64,6 +70,11 @@ expect object Forest {
     fun uproot(tree : Tree)
 
 }
+
+/**
+ * Plants the default, platform defined tree into the forest.
+ */
+expect fun Forest.plantDefaultTree()
 
 fun Forest.info(tag: String, exception : Throwable? = null, messageProducer: () -> String) = log(tag, LogLevel.INFO, exception, messageProducer)
 fun Forest.debug(tag: String, exception : Throwable? = null, messageProducer: () -> String) = log(tag, LogLevel.DEBUG, exception, messageProducer)
