@@ -1,11 +1,11 @@
 plugins {
     id("com.android.library") version "3.6.0"
-    kotlin("multiplatform") version "1.4.21"
+    kotlin("multiplatform") version "1.4.30"
     id("maven-publish")
 }
 
 group = "io.paloski"
-version = "1.1.0"
+version = "1.1.1"
 
 repositories {
     mavenCentral()
@@ -39,8 +39,6 @@ kotlin {
     android {
         publishLibraryVariants("release", "debug")
     }
-
-    val autoServiceVersion = "1.0-rc7"
 
     sourceSets {
         val commonMain by getting

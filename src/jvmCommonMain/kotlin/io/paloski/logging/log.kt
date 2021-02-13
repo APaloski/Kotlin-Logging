@@ -1,6 +1,7 @@
 package io.paloski.logging
 
 import java.lang.reflect.InvocationHandler
+import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import java.util.*
@@ -25,15 +26,16 @@ actual fun Forest.plantDefaultTree() {
  *
  * This is subject to all the restrictions imposed by [Proxy.newProxyInstance]
  */
-inline fun <reified T : Any> T.logged(callTracingLevel: LogLevel = LogLevel.INFO,
+inline fun <reified T : Any> T.logged(tree: Tree = Forest.asTree(),
+                                      callTracingLevel: LogLevel = LogLevel.INFO,
                                       errorLevel: LogLevel = LogLevel.ERROR) : T =
-    Proxy.newProxyInstance(this::class.java.classLoader, arrayOf(T::class.java), LoggingInvocationHandler(this, callTracingLevel, errorLevel)) as T
+    Proxy.newProxyInstance(this::class.java.classLoader, arrayOf(T::class.java), LoggingInvocationHandler(this, tree, callTracingLevel, errorLevel)) as T
 
 //Gets around internal classes exposed
-fun <T : Any> LoggingInvocationHandler(actual : T, callTracingLevel : LogLevel, errorLevel: LogLevel): InvocationHandler
-    = LoggingInvocationHandlerImpl(actual, callTracingLevel, errorLevel)
+fun <T : Any> LoggingInvocationHandler(actual : T, tree: Tree, callTracingLevel : LogLevel, errorLevel: LogLevel): InvocationHandler
+    = LoggingInvocationHandlerImpl(actual, tree, callTracingLevel, errorLevel)
 
-private class LoggingInvocationHandlerImpl<T : Any>(val actual : T, val callTracingLevel : LogLevel, val errorLevel: LogLevel) : InvocationHandler {
+private class LoggingInvocationHandlerImpl<T : Any>(val actual : T, val tree: Tree, val callTracingLevel : LogLevel, val errorLevel: LogLevel) : InvocationHandler {
 
     private val callIdIncrementer = AtomicLong()
 
@@ -44,19 +46,20 @@ private class LoggingInvocationHandlerImpl<T : Any>(val actual : T, val callTrac
         val callId = callIdIncrementer.getAndIncrement()
         val formattedMethodName = "${actual}.${method.name}(${args.joinToString(", ") { it.toString() }})"
         return try {
-            Forest.log(actual::class.simpleName.orEmpty(), level = callTracingLevel) {
+            tree.log(actual::class.simpleName.orEmpty(), level = callTracingLevel) {
                 "==> {CallId=${callId}} Calling $formattedMethodName"
             }
-            val result = method.invoke(actual, args)
-            Forest.log(actual::class.simpleName.orEmpty(), level = callTracingLevel) {
+            val result = method.invoke(actual, *args)
+            tree.log(actual::class.simpleName.orEmpty(), level = callTracingLevel) {
                 "<== {CallId=${callId}} Returning $result from $formattedMethodName"
             }
             result
-        } catch (exp : Exception) {
-            Forest.log(actual::class.simpleName.orEmpty(), level = errorLevel, exception = exp) {
+        } catch (exp : InvocationTargetException) {
+            tree.log(actual::class.simpleName.orEmpty(), level = errorLevel, exception = exp.cause ?: exp) {
                 "<== {CallId=${callId}} EXCEPTIONAL RESULT from $formattedMethodName"
             }
-            throw exp
+            //We should be able to get the cause here based on method.invoke, but fall back to the exp itself so the stack isn't lost
+            throw exp.cause ?: exp
         }
     }
 }
