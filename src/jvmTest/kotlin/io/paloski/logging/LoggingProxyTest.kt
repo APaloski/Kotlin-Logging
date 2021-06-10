@@ -1,7 +1,6 @@
 package io.paloski.logging
 
-import java.io.IOException
-import java.lang.Exception
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -11,13 +10,17 @@ class LoggingProxyTest {
 
     @Test
     fun loggingProxyProperlyPassesArgumentsAndResultsThrough() {
-        val memoryTree = MemoryTree()
+        val memoryTreeRef = AtomicReference<MemoryTree>()
         val expectedResult = false
         val impl = MemoryImpl(expectedResult)
         val loggedProxyImpl = impl.logged<ToProxy>(
-            tree = memoryTree,
             callTracingLevel = LogLevel.DEBUG,
-            errorLevel = LogLevel.ERROR
+            errorLevel = LogLevel.ERROR,
+            treeFactory = {
+                val tree = MemoryTree()
+                memoryTreeRef.set(tree)
+                tree
+            }
         )
         val expectedArg1 = "TestInput"
         val expectedArg2 = 2
@@ -29,7 +32,7 @@ class LoggingProxyTest {
         assertEquals(expectedArg2, impl.calls.first().arg2)
 
         //Get all our logged records
-        val byLevel = memoryTree.records.groupBy { it.level }
+        val byLevel = memoryTreeRef.get().records.groupBy { it.level }
         //Make sure nothing but debug (our preferred) came through
         for (value in LogLevel.values()) {
             when(value) {
@@ -38,10 +41,8 @@ class LoggingProxyTest {
                     // should include the params and the output should include the return value. We don't have many
                     // other requirements
                     val inputs = byLevel[value].orEmpty()[0]
-                    assertTrue(inputs.tag.contains(impl.javaClass.simpleName), "Tag must contain the simple java name of the class being proxied")
                     assertTrue(inputs.message.contains(expectedArg1) && inputs.message.contains(expectedArg2.toString()), "Input Message must contain the expected arguments")
                     val outputs = byLevel[value].orEmpty()[1]
-                    assertTrue(outputs.tag.contains(impl.javaClass.simpleName), "Tag must contain the simple java name of the class being proxied")
                     assertTrue(inputs.message.contains(expectedArg1) && inputs.message.contains(expectedArg2.toString()), "Output Message must contain the return value")
                 }
                 else -> assertEquals(0, byLevel[value].orEmpty().size, "Level $value must have no logged records")
@@ -51,11 +52,15 @@ class LoggingProxyTest {
 
     @Test
     fun loggingProxyPassesThroughExceptionAndLogsIt() {
-        val memoryTree = MemoryTree()
+        val memoryTreeRef = AtomicReference<MemoryTree>()
         val expectedException = IllegalStateException()
         val impl = MemoryImpl(expectedException = expectedException)
         val loggedProxyImpl = impl.logged<ToProxy>(
-            tree = memoryTree,
+            treeFactory = {
+                val tree = MemoryTree()
+                memoryTreeRef.set(tree)
+                tree
+            },
             callTracingLevel = LogLevel.INFO,
             errorLevel = LogLevel.ERROR
         )
@@ -72,20 +77,18 @@ class LoggingProxyTest {
         }
 
         //Get all our logged records
-        val byLevel = memoryTree.records.groupBy { it.level }
+        val byLevel = memoryTreeRef.get().records.groupBy { it.level }
         for(value in LogLevel.values()) {
             when(value) {
                 LogLevel.INFO -> {
                     //We expect an input and *NO* output message, both need to log on the correct class name and the input
                     // should include the params. We don't have many other requirements
                     val inputs = byLevel[value].orEmpty()[0]
-                    assertTrue(inputs.tag.contains(impl.javaClass.simpleName), "Tag must contain the simple java name of the class being proxied")
                     assertTrue(inputs.message.contains(expectedArg1) && inputs.message.contains(expectedArg2.toString()), "Input Message must contain the expected arguments")
                 }
                 LogLevel.ERROR -> {
                     //We need to have an exception message with our expected exception contained
                     val expMessage = byLevel[value].orEmpty()[0]
-                    assertTrue(expMessage.tag.contains(impl.javaClass.simpleName), "Tag must contain the simple java name of the class being proxied")
                     assertEquals(expMessage.exception, expectedException)
                 }
                 else -> assertEquals(0, byLevel[value].orEmpty().size , "Level $value must have no logged records")
@@ -100,11 +103,15 @@ class MemoryTree : Tree {
     val records : List<LogRecord>
         get() = _records
 
-    override fun log(tag: String, level: LogLevel, exception: Throwable?, messageProducer: () -> String) {
-        _records += LogRecord(tag, level, exception, messageProducer())
+    override fun log(level: LogLevel, exception: Throwable?, messageProducer: () -> String) {
+        _records += LogRecord(level, exception, messageProducer())
     }
 
-    data class LogRecord(val tag: String, val level: LogLevel, val exception: Throwable?, val message : String)
+    override fun isLoggable(level: LogLevel): Boolean {
+        return true
+    }
+
+    data class LogRecord(val level: LogLevel, val exception: Throwable?, val message : String)
 }
 
 interface ToProxy {

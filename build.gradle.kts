@@ -1,11 +1,10 @@
 plugins {
-    id("com.android.library") version "3.6.0"
     kotlin("multiplatform") version "1.4.30"
     id("maven-publish")
 }
 
 group = "io.paloski"
-version = "1.1.1"
+version = "2.0.0"
 
 repositories {
     mavenCentral()
@@ -18,9 +17,7 @@ kotlin {
     *  To find out how to configure the targets, please follow the link:
     *  https://kotlinlang.org/docs/reference/building-mpp-with-gradle.html#setting-up-targets */
 
-    jvm("jvmCommon")
-    jvm("jvmJdkLogging")
-    jvm("jvmSlf4j")
+    jvm()
     js(BOTH) {
         browser {
             testTask {
@@ -36,9 +33,6 @@ kotlin {
             }
         }
     }
-    android {
-        publishLibraryVariants("release", "debug")
-    }
 
     sourceSets {
         val commonMain by getting
@@ -50,44 +44,16 @@ kotlin {
             }
         }
 
-        val androidMain by getting
-
-        val androidTest by getting {
-            dependencies {
-                implementation(kotlin("test-junit"))
-            }
-        }
-
-        val jvmCommonMain by getting {
-            dependsOn(commonMain)
-            dependencies {
-                implementation(kotlin("stdlib-jdk8"))
-            }
-        }
-
-        val jvmCommonTest by getting {
-            dependencies {
-                implementation(kotlin("test-junit"))
-            }
-        }
-
-        val jvmJdkLoggingMain by getting {
-            dependsOn(jvmCommonMain)
-        }
-
-        val jvmJdkLoggingTest by getting {
-            dependsOn(jvmCommonTest)
-        }
-
-        val jvmSlf4jMain by getting {
-            dependsOn(jvmCommonMain)
+        val jvmMain by getting {
             dependencies {
                 implementation("org.slf4j:slf4j-api:1.7.30")
             }
         }
 
-        val jvmSlf4jTest by getting {
-            dependsOn(jvmCommonTest)
+        val jvmTest by getting {
+            dependencies {
+                implementation(kotlin("test-junit"))
+            }
         }
 
         val jsMain by getting
@@ -111,15 +77,5 @@ publishing {
                 password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
             }
         }
-    }
-}
-
-android {
-    compileSdkVersion(29)
-    defaultConfig {
-        minSdkVersion(14)
-    }
-    testOptions {
-        unitTests.isReturnDefaultValues = true
     }
 }

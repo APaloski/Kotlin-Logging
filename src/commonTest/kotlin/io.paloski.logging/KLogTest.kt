@@ -51,40 +51,12 @@ class KLogTest {
     }
 
     @Test
-    fun fatalDirectRunsWithoutException() {
-        Dummy.fatalLog("test")
+    fun traceDirectRunsWithoutException() {
+        Dummy.traceLog("test")
     }
 
     @Test
-    fun fatalLambdaRunsWithoutException() {
-        Dummy.fatalLog { "Test" }
-    }
-
-    @Test
-    fun forestTreeCannotBePlantedIntoForest() { //The set of sets which cannot contain itself...
-        try {
-            Forest.plant(Forest.asTree())
-            fail("The forest tree must not be able to be planted into itself")
-        } catch(exp : IllegalArgumentException) {
-            //Success
-        }
-
-        try {
-            Forest.asTree().plant()
-            fail("The forest tree must not be able to be planted")
-        } catch(exp : IllegalArgumentException) {
-            //Success
-        }
-    }
-
-    @Test
-    fun plantedTreeCanBeUprooted() {
-        val tree = DummyTree
-        tree.plant()
-        tree.uproot()
-    }
-
-    private object DummyTree : Tree {
-        override fun log(tag: String, level: LogLevel, exception: Throwable?, messageProducer: () -> String) = Unit
+    fun traceLambdaRunsWithoutException() {
+        Dummy.traceLog { "Test" }
     }
 }

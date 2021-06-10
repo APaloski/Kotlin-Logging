@@ -1,24 +1,21 @@
 package io.paloski.logging
 
+import org.slf4j.LoggerFactory
+import org.slf4j.event.Level
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
-import java.util.*
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.reflect.KClass
 
-fun Forest.plantAllServiceTrees() {
-    serviceLoadAllTrees().forEach { it.plant() }
-}
-
-private fun serviceLoadAllTrees() = ServiceLoader.load(Tree::class.java).toSet()
-
-actual fun Forest.plantDefaultTree() {
-    val trees = serviceLoadAllTrees()
-    assert(trees.size == 1) {
-        "Exactly one tree must be service loaded at runtime to use plantDefaultTree (Found: $trees). Use Forest.plantAllServiceTrees or manually plant your trees instead"
-    }
-    trees.first().plant()
+actual enum class LogLevel(private val level : Level) {
+    TRACE(Level.TRACE),
+    INFO(Level.INFO),
+    DEBUG(Level.DEBUG),
+    WARN(Level.WARN),
+    ERROR(Level.ERROR)
+    ;
 }
 
 /**
@@ -26,10 +23,10 @@ actual fun Forest.plantDefaultTree() {
  *
  * This is subject to all the restrictions imposed by [Proxy.newProxyInstance]
  */
-inline fun <reified T : Any> T.logged(tree: Tree = Forest.asTree(),
-                                      callTracingLevel: LogLevel = LogLevel.INFO,
-                                      errorLevel: LogLevel = LogLevel.ERROR) : T =
-    Proxy.newProxyInstance(this::class.java.classLoader, arrayOf(T::class.java), LoggingInvocationHandler(this, tree, callTracingLevel, errorLevel)) as T
+inline fun <reified T : Any> T.logged(callTracingLevel: LogLevel = LogLevel.INFO,
+                                      errorLevel: LogLevel = LogLevel.ERROR,
+                                       treeFactory : (KClass<T>) -> Tree = { Tree.makeTree(it) }) : T =
+    Proxy.newProxyInstance(this::class.java.classLoader, arrayOf(T::class.java), LoggingInvocationHandler(this, treeFactory(T::class), callTracingLevel, errorLevel)) as T
 
 //Gets around internal classes exposed
 fun <T : Any> LoggingInvocationHandler(actual : T, tree: Tree, callTracingLevel : LogLevel, errorLevel: LogLevel): InvocationHandler
@@ -46,16 +43,16 @@ private class LoggingInvocationHandlerImpl<T : Any>(val actual : T, val tree: Tr
         val callId = callIdIncrementer.getAndIncrement()
         val formattedMethodName = "${actual}.${method.name}(${args.joinToString(", ") { it.toString() }})"
         return try {
-            tree.log(actual::class.simpleName.orEmpty(), level = callTracingLevel) {
+            tree.log(level = callTracingLevel) {
                 "==> {CallId=${callId}} Calling $formattedMethodName"
             }
             val result = method.invoke(actual, *args)
-            tree.log(actual::class.simpleName.orEmpty(), level = callTracingLevel) {
+            tree.log(level = callTracingLevel) {
                 "<== {CallId=${callId}} Returning $result from $formattedMethodName"
             }
             result
         } catch (exp : InvocationTargetException) {
-            tree.log(actual::class.simpleName.orEmpty(), level = errorLevel, exception = exp.cause ?: exp) {
+            tree.log(level = errorLevel, exception = exp.cause ?: exp) {
                 "<== {CallId=${callId}} EXCEPTIONAL RESULT from $formattedMethodName"
             }
             //We should be able to get the cause here based on method.invoke, but fall back to the exp itself so the stack isn't lost
@@ -64,19 +61,8 @@ private class LoggingInvocationHandlerImpl<T : Any>(val actual : T, val tree: Tr
     }
 }
 
-actual object Forest {
-    actual val trees: Set<Tree>
-        get() = sneakyTrees
+actual fun Tree.Companion.makeTree(tag: String): Tree =
+    Slf4jTree(LoggerFactory.getLogger(tag))
 
-    private val sneakyTrees = Collections.synchronizedSet<Tree>(mutableSetOf())
-
-    actual fun plant(tree: Tree) {
-        require(tree != ForestTree)
-        sneakyTrees += tree
-    }
-
-    actual fun uproot(tree: Tree) {
-        require(tree != ForestTree)
-        sneakyTrees -= tree
-    }
-}
+actual fun Tree.Companion.makeTree(cls : KClass<*>) : Tree =
+    Slf4jTree(LoggerFactory.getLogger(cls.java))
